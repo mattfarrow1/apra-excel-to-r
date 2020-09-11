@@ -1,30 +1,260 @@
 ---
 title: "Excel to R"
 author: "Matt Farrow"
-date: "8/18/2020"
-output: html_document
+output: 
+  learnr::tutorial:
+    css: css/allison_horst.css
+runtime: shiny_prerendered
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(learnr)
+library(kableExtra)
+library(janitor)
+library(here)
+
+df <- read_csv(
+  "excel-to-r.csv",
+  col_types = cols(
+    `most recent gift amount` = col_number(),
+    `most recent gift date` = col_date(format = "%m/%d/%y"),
+    `lifetime giving` = col_number()
+  )
+)
 ```
 
-## R Markdown
+## I Can't Do This!
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r, img-mountain1, echo=FALSE, out.width="100%", fig.align="center", fig.cap="photo by [Toomas Tartes](https://unsplash.com/@toomastartes) on [Unsplash](https://unsplash.com/photos/Yizrl9N_eDA)"}
+knitr::include_graphics("images/toomas-tartes-Yizrl9N_eDA-unsplash.jpg")
 ```
 
-## Including Plots
+Getting started with R can feel like standing in front of a mountain with no idea how you could possibly climb it, especially if you're new to programming. 
 
-You can also embed plots, for example:
+> I couldn’t get R to do anything. It wouldn’t read in files, draw a plot or multiply two numbers together. All I could do was generate mystifying errors and get mocked on Stack Overflow for asking redundant questions. This was all made more frustrating by the fact that I could accomplish all of these things in Excel without much difficulty.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+*[Gordon Shotwell's blog post: Excel to R](https://blog.shotwell.ca/posts/r_for_excel_users/)*
+
+The last sentence of that quote embodies how I felt during the first year or two of trying to teach myself R. If you decide to embarck on the journey of learning R, try keeping the mountain metaphor in mind, and remember to occasionally stop looking *up* the mountain and instead look *back* at how far you've come.
+
+```{r, img-mountain2, echo=FALSE, out.width="100%", fig.align="center", fig.cap="photo by [Peter Conlan](https://unsplash.com/@peterconlan) on [Unsplash](https://unsplash.com/photos/LEgwEaBVGMo)"}
+knitr::include_graphics("images/peter-conlan-LEgwEaBVGMo-unsplash.jpg")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Let's get started!
+
+## Getting Started
+
+For this workshop, you won't need to install any software on your own machine; everything will be provided for you here in this document. If you are interested in using the full code from today's workshop on your own machine, a copy is available here, on GitHub.
+
+First things first, we need to download two pieces of software: R and RStudio. We discussed these during the presentation, but here are the links to download each.
+
+### Download Links
+
+#### R
+
+#### RStudio
+
+### First Steps
+
+1. Install R
+2. Install RStudio
+3. Open RStudio
+4. Navigate to the **Tools** menu, **Global Options**
+5. Change "Save workspace to .RData on exit:" to *Never*
+6. Click [OK]
+
+```{r set-options, echo=FALSE, out.width="50%", fig.align="center", fig.cap="RStudio Options"}
+knitr::include_graphics("images/rstudio-options.png")
+```
+
+Finally, make sure you have a new script window open in the top right. If you don't, you can navigate to **File** > **New File** > **R Script**.
+
+### Installing Packages
+
+Now that we have R and RStudio installed, we're going to install a set of packages that will make our work a little more straightforward. The packages are part of what is called the [tidyverse](https://www.tidyverse.org).
+
+> The tidyverse is an opinionated collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures.
+
+To install packages, we use the `install.packages("package_name")` format. Don't forget the quotation marks around the name of the package!
+
+```{r install-packages, eval=FALSE, warning=FALSE}
+# Install "tidyverse" packages
+install.packages("tidyverse")
+```
+
+Once the packages are installed, we need to tell R that you want to use them. 
+
+```{r load-packages, eval=FALSE, message=FALSE}
+# Load tidyverse packages
+library(tidyverse)
+```
+
+The reason we didn't need quotation marks around `tidyverse` is because, in this case, RStudio can already see that a package called tidyverse exists in its library. 
+
+### Read the Data
+
+We're now going to read in our data set. To do that, we're going to use the `read_csv` function that comes as part of the `readr` package in the `tidyverse`. Let's break down the function:
+
+- `df`    This is how we'll refer to our data in R. df stands for data frame, but you could use "x", "prospecting", "pumpernickel", or soomething else. My only caution is to avoid naming it the same as another R function (RStudio's autocomplete will help you avoid this.)
+- `<-`    This is the assignment operator in R. It says, "Take everything to the right of me and assign it to the object we named in the previous step.
+- `read_csv()`    A function of the `readr` package that reads in .csv files. Another package, `readxl`, will let you read in .xlsx files. All of the information within the parenthases tells R about the data we're reading in. In this case, which columns are numbers, and which is a date.
+
+```{r load-data, eval=FALSE}
+df <- read_csv(
+  "excel-to-r.csv",
+  col_types = cols(
+    `most recent gift amount` = col_number(),
+    `most recent gift date` = col_date(format = "%m/%d/%y"),
+    `lifetime giving` = col_number()
+  )
+)
+```
+
+One of the things you're probably starting to realize is that `R` requires you to type *everything*. There aren't any buttons that generate charts or format your columns. This is part of your journey up the mountain. It may be new, it may be weird, and it may be uncomfortable, but keep going and eventually you may not ever want to go back to Excel. 
+
+We're going to use a function from the `janitor` package to reformat out column names with underscores instead of spaces. The reason we're doing that is it makes it much easier for R to know that "most recent gift amount" is not four separate things, but a single variable: most_recent_gift_amount. 
+
+```{r img-janitor, echo=FALSE, out.width="75%", fig.align="center"}
+knitr::include_graphics("images/janitor_clean_names.png")
+```
+
+```{r}
+df <- janitor::clean_names(df)
+```
+
+This is a style that I like to use, but there are others
+
+```{r img-naming, echo=FALSE, out.width="75%", fig.align="center"}
+knitr::include_graphics("images/coding_cases.png")
+```
+
+## Examining the Data
+
+There are a number of ways to take a look at your data at this point. The first is to click on the name of the data set in the Environment tab. Here are some other ways from within the code.
+
+```{r example-str, exercise = TRUE}
+# Structure: this is a built-in function of R
+str(df)
+```
+
+```{r example-glimpse, exercise = TRUE}
+# Glimpse: a more compact version of str that comes with the tidyverse
+glimpse(df)
+```
+
+```{r example-view}
+# View: creates a new window to look at the data
+view(df)
+```
+
+## Filtering Data
+
+We're approaching this session from the perspective of doing prospecting in Excel. We've started with a data set from our CRM and we're going to append some additional data, create some new columns, and filter the data to create a list of potential prospects for our gift officer.
+
+Let's jump right in to seeing some results. In [Excel](https://support.microsoft.com/en-us/office/filter-data-in-a-range-or-table-01832226-31b5-4568-8806-38c37dcc180e), filtering data is a quick way to sift through the data to find new prospects. 
+
+- Who recently made a gift? 
+- Who is rated at a certain threshold?
+- Who lives in the city I'm visiting? 
+
+However,one of the challenges in using Excel for this work is that it isn't reproducible. Let's say you apply a series of filters to answer all three of these questions, but then clear the selection when another idea strikes. Do you remember the sequence of filters you applied to get back there? 
+
+What if your fundraiser comes to you and asks, "Why was this prospect added to my portfolio?" Can you answer them?
+
+Our first "verb" that we're going to use is `filter` from the `dplyr` package. 
+
+```{r img-dplyr, echo=FALSE, out.width="75%", fig.align="center"}
+knitr::include_graphics("images/dplyr_wrangling.png")
+```
+
+
+This has been my workhorse package from Day 1 on my own R journey. We're going to start by chaining some pieces together using the `%>%` command. In tidyverse parlance, this is referred to as a "pipe," and it is used to chain actions together.
+
+```{r img-filter, echo=FALSE, out.width="100%", fig.align="center"}
+knitr::include_graphics("images/dplyr_filter.jpg")
+```
+
+```{r example-filter-1, exercise = TRUE}
+df %>%
+  filter(most_recent_gift_date >= "2019-06-01")
+```
+
+Here we took our data **(df)** and piped it **(%>%)** to our filter where we asked it to return prospects whose most recent gift date was greater than or equal to the start of our fiscal year, June 1, 2019 **(filter(most_recent_gift_date >= "2019-06-01"))**.
+
+We can also filter more than one thing at a time:
+
+```{r example-filter-2, exercise = TRUE}
+df %>%
+  filter(most_recent_gift_date >= "2019-06-01",
+         st == "TX")
+```
+
+In this example, we've added a 2nd filter - **state equals Texas** - to our last example.
+
+## Working with Ratings
+
+Let's start by looking at our ratings. What values do we have in this data set? The "unique" function returns all of the different values within the specific field(s). In this case, we've put df$rating inside the parenthases. That tells R that we want the unique values of the rating column inside the df data set.
+
+```{r example-unique, exercise = TRUE}
+unique(df$rating)
+```
+
+In the console, you can see the list of ratings there. Let's look at who our $10M+ rated folks are. Here's where we really start diving into R and the tidyverse. The first thing we're going to do is call "df" to tell R that where we're starting. Next, we'll put in this weird symbol "%>%" called a pipe. The pipe is part of the tidyverse and connects pieces of code like a workflow. On the next line we see `filter(rating == "$10M+)`. Altogether, you could read this as:
+
+1. Take the df data frame
+2. Then pipe or send it to the filter command
+3. Where we want to find ratings that equal (note: ==) $10M+
+4. Display the results in the console
+
+```{r example-filter-3, exercise = TRUE}
+df %>% 
+  filter(rating == "$10M+")
+```
+
+If only our real data sets could get us 24,709 prospects rated that highly!
+
+While that's certainly useful, wouldn't it be easier if we could enter a numerical value for rating instead of writing out the actual rating each time? This would be especially helpful if you want a range of ratings.
+
+### VLOOKUP (Excel) vs. Join (R)
+
+Let's append numerical rating values by creating a reference table and recreating the VLOOKUP functionality that you know from Excel. We're going to use a tibble for this functionality. A tibble is simply the name for a tidyverse-styled data set.
+
+The structure of a tibble is:   tibble(column_1_name = c(val1, val2, etc.),
+                                        column_2_name = c(val1, val2, etc.),
+                                        column_3_name = c(val1, val2, etc.))
+
+Create a lookup table of values to append to df. Here he use the assignment operator `<-` to assign our tibble the name `rating_values`.
+
+```{r rating-tibble, exercise = TRUE}
+rating_values <- tibble(rating = c("Less than $10K",
+                                   "$10K-$24K",
+                                   "$25K-$49K",
+                                   "$50K-$99K",
+                                   "$100K-$249K",
+                                   "$250K-$999K",
+                                   "$1M-$2.49M",
+                                   "$2.5M-$4.99M",
+                                   "$5M-$9.99M",
+                                   "$10M+"),
+                        rating_value = c(1,
+                                         10000,
+                                         25000,
+                                         50000,
+                                         100000,
+                                         250000,
+                                         1000000,
+                                         2500000,
+                                         5000000,
+                                         10000000))
+
+# Print results
+rating_values
+```
+
+```{r left-join, exercise = TRUE}
+df <- left_join(df, rating_values)
+```
+
