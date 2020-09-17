@@ -48,6 +48,13 @@ rating_values <- tibble(rating = c("Less than $10K",
                                          10000000))
 
 prospecting <- left_join(df, rating_values)
+
+prospecting <- prospecting %>%
+  mutate(rating_bucket = if_else(
+    rating_value >= 1000000,
+    "PG",
+    if_else(rating_value >= 100000, "MG", "LG")
+  ))
 ```
 
 ## I Can't Do This!
@@ -62,11 +69,15 @@ Getting started with R can feel like standing in front of a mountain with no ide
 
 *[Gordon Shotwell's blog post: Excel to R](https://blog.shotwell.ca/posts/r_for_excel_users/)*
 
-The last sentence of that quote embodies how I felt during the first year or two of trying to teach myself R. If you decide to embarck on the journey of learning R, try keeping the mountain metaphor in mind, and remember to occasionally stop looking *up* the mountain and instead look *back* at how far you've come.
+The last sentence of that quote embodies how I felt during the first year or two of trying to teach myself R. If you decide to embark on the journey of learning R, try keeping the mountain metaphor in mind and remember to occasionally stop looking *up* the mountain and instead look *back* at how far you've come.
 
 ```{r, img-mountain2, echo=FALSE, out.width="100%", fig.align="center", fig.cap="photo by [Peter Conlan](https://unsplash.com/@peterconlan) on [Unsplash](https://unsplash.com/photos/LEgwEaBVGMo)"}
 knitr::include_graphics("images/peter-conlan-LEgwEaBVGMo-unsplash.jpg")
 ```
+
+### Before We Start
+
+As much as I'd like to say you'll leave here today feeling empowered to dive into R, the reality is there's only so much that I can cover in this short workshop. If you do have questions after you leave, please don't hesitate to get in touch. I've also included a number of resources at the end that can help get you started. 
 
 Let's get started!
 
@@ -115,9 +126,11 @@ install.packages("tidyverse")
 library(tidyverse)
 ```
 
-The reason we didn't need quotation marks around `tidyverse` the second time is because, in this case, RStudio can already see that a package called tidyverse exists in its library. 
+The reason we don't need quotation marks around `tidyverse` in the library function is because, in this case, RStudio can already see that a package called tidyverse exists in the library. 
 
 ### Conventions to Know
+
+Coming from Excel, certain conventions are fairly commonplace, things like parenthases `()` to enclose terms in a formula, mathematical operators like `+`, `-`, `/`, and `*`. `R` has some of its own quirks that can be difficult to wrap your head around. I've included a small list of conventions that may be helpful as you're getting started. 
 
 | R        	| Description                              	| Shortcut         	|
 |----------	|------------------------------------------	|------------------	|
@@ -132,11 +145,21 @@ The reason we didn't need quotation marks around `tidyverse` the second time is 
 
 ### Read the Data
 
-We're now going to read in our data set. To do that, we're going to use the `read_csv` function that comes as part of the `readr` package in the `tidyverse`. Let's break down the function:
+In Excel, we open up a data set and then immediately start working in it. R works more like the photo editing features on your phone. We can crop, rotate, adjust contrast, and apply a filter, but at the end of that process the original photo still exists if we need to get it back.
 
-- `df`    This is how we'll refer to our data in R. df stands for data frame, but you could use "x", "prospecting", "pumpernickel", or soomething else. My only caution is to avoid naming it the same as another R function (RStudio's autocomplete will help you avoid this.)
-- `<-`    This is the assignment operator in R. It says, "Take everything to the right of me and assign it to the object we named in the previous step.
-- `read_csv()`    A function of the `readr` package that reads in .csv files. Another package, `readxl`, will let you read in .xlsx files. All of the information within the parenthases tells R about the data we're reading in. In this case, which columns are numbers, and which is a date.
+A simple view of the workflow is:
+
+- Point R at the location of a file
+- R loads the data of the file into memory
+- All work takes place on the version in memory, leaving the original alone
+- If you make a change, a mistake, or want to start over, the original data is ready
+- Finally, you can save your work back into an Excel-readable file
+
+We're going to start at the beginning and read in our data set. This can be done in code, but there's a more user-friendly way to it. We're going to use the `read_csv` function that comes as part of the `readr` package in the `tidyverse`. There are packages (`readxl` for example) that will let you read .xlsx files, but today we're just going to work with a simple .csv file. 
+
+```{r}
+# ADD READR IMPORTING DATA SCREENSHOTS
+```
 
 ```{r load-data, eval=FALSE}
 df <- read_csv(
@@ -149,9 +172,11 @@ df <- read_csv(
 )
 ```
 
-One of the things you're probably starting to realize is that `R` requires you to type *everything*. There aren't any buttons that generate charts or format your columns. This is part of your journey up the mountain. It may be new, it may be weird, and it may be uncomfortable, but keep going and eventually you may not ever want to go back to Excel. 
+One of the things you're probably starting to realize is that `R` requires you to type *everything*. There aren't any buttons that generate charts or format your columns. This is part of your journey up the mountain. It may be new, it may be weird, and it may be uncomfortable, but keep going and eventually you may not ever want to go back to Excel.
 
-We're going to use a function from the `janitor` package to reformat out column names with underscores instead of spaces. The reason we're doing that is it makes it much easier for R to know that "most recent gift amount" is not four separate things, but a single variable: most_recent_gift_amount. 
+### Cleaning up Column Names
+
+We're going to use a function from the `janitor` package to reformat out column names with underscores instead of spaces. The reason we're doing that is it makes it much easier for R to know that "most recent gift amount" is not four separate things, but a single variable: most_recent_gift_amount. I could have done this ahead of time, but most of you will probably be working with Excel files that have column names like "Research Rating" or "Lookup ID".
 
 ```{r img-janitor, echo=FALSE, out.width="75%", fig.align="center"}
 knitr::include_graphics("images/janitor_clean_names.png")
@@ -161,13 +186,20 @@ knitr::include_graphics("images/janitor_clean_names.png")
 df <- janitor::clean_names(df)
 ```
 
-This is a style that I like to use, but there are many others!
+You may have noticed there that I used a slightly different format, `janitor::clean_names(df)`, calling the library name, followed by two colons, followed by the function name. Since that's the only time in this workshop that I'm using the `janitor` package, this was a way to call the one function without loading the whole library like this:
+
+```{r df-janitor-demo, eval=FALSE}
+library(janitor)
+df <- clean_names(df)
+```
+
+You may have also noticed that the function defaults to camel_case, which is my preferred style, but there are many others!
 
 ```{r img-naming, echo=FALSE, out.width="75%", fig.align="center"}
 knitr::include_graphics("images/coding_cases.png")
 ```
 
-## Examining the Data
+### Examining the Data
 
 There are a number of ways to take a look at your data at this point. The first is to click on the name of the data set in the Environment tab. Here are two other ways from within the code.
 
@@ -179,7 +211,9 @@ str(df)
 glimpse(df)
 ```
 
-## The `dplyr` Package
+## Data Manipulation
+
+### The `dplyr` Package
 
 ```{r img-dplyr, echo=FALSE, out.width="75%", fig.align="center"}
 knitr::include_graphics("images/dplyr_wrangling.png")
@@ -195,7 +229,7 @@ The [`dplyr`](https://dplyr.tidyverse.org) package provides a "consistent set of
 
 `dplyr` has been my workhorse package for almost all of the work that I used to do in Excel, at least in terms of data manipulation.  We'll start with `filter()`.
 
-## Filtering Data
+### Filtering Data
 
 ```{r img-filter, echo=FALSE, out.width="100%", fig.align="center"}
 knitr::include_graphics("images/dplyr_filter.jpg")
@@ -203,17 +237,15 @@ knitr::include_graphics("images/dplyr_filter.jpg")
 
 We're approaching this session from the perspective of doing prospecting in Excel. We've started with a data set from our CRM and we're going to append some additional data, create some new columns, and filter the data to create a list of potential prospects for our gift officer.
 
-Let's jump right in to seeing some results. In [Excel](https://support.microsoft.com/en-us/office/filter-data-in-a-range-or-table-01832226-31b5-4568-8806-38c37dcc180e), filtering data is a quick way to sift through the data to find new prospects. 
+Let's jump right in to seeing some results. In [Excel](https://support.microsoft.com/en-us/office/filter-data-in-a-range-or-table-01832226-31b5-4568-8806-38c37dcc180e), filtering data is a quick way to sift through the data to find new prospects and answer questions such as:
 
 - Who recently made a gift? 
 - Who is rated at a certain threshold?
 - Who lives in the city I'm visiting? 
 
-However, one of the challenges in using Excel for this work is that it isn't reproducible. Let's say you apply a series of filters to answer all three of these questions, but then clear the selection when another idea strikes. Do you remember the sequence of filters you applied to get back there? 
+However, one of the challenges in using Excel for this work is that it isn't reproducible. Let's say you apply a series of filters to answer all three of these questions, but then clear the selection when another idea strikes. Do you remember the sequence of filters you applied to get back there? What if your fundraiser comes to you and asks, "Why was this prospect added to my portfolio?" Can you answer them?
 
-What if your fundraiser comes to you and asks, "Why was this prospect added to my portfolio?" Can you answer them?
-
-We're going to start by chaining some pieces together using the `%>%` command. In tidyverse parlance, this is referred to as a "pipe," and it is used to pipe or chain actions together.
+In R, We're going to start by chaining some pieces together using the `%>%` command. In tidyverse parlance, this is referred to as a "pipe," and it is used to pipe or chain actions together.
 
 ```{r example-filter-1, exercise = TRUE}
 df %>%
@@ -230,41 +262,61 @@ df %>%
          st == "TX")
 ```
 
-In this example, we've added a 2nd filter - **state equals Texas** - to our last example.
+In this example, we've added a comma after 6/1/2019 along with a 2nd filter - **state equals Texas** - to our last example. If, for some reason, we wanted to see recent givers *or* prospects who lived in Texas, we could do that too:
 
-## Working with Ratings
+```{r example-filter-3, exercise = TRUE}
+df %>%
+  filter(most_recent_gift_date >= "2019-06-01" |
+           st == "TX")
+```
 
-Let's start by looking at our ratings. What values do we have in this data set? The "unique" function returns all of the different values within the specific field(s). In this case, we've put df$rating inside the parenthases. That tells R that we want the unique values of the rating column inside the df data set.
+In that case, we used the vertical line `|` instead of a comma `,` to define the `or` command.
+
+### Joining Data
+
+Now that we've seen the basics of filtering, let's look at our ratings. What values do we have in this data set? 
+
+The `unique` function returns all of the different values within the specific field(s). In this case, we've put `df$rating` inside the parentheses. That tells R that we want the unique values of the rating column inside the `df` data set.
 
 ```{r example-unique, exercise = TRUE}
 unique(df$rating)
 ```
 
-In the console, you can see the list of ratings there. Let's look at who our $10M+ rated folks are. Here's where we really start diving into R and the tidyverse. The first thing we're going to do is call "df" to tell R that where we're starting. Next, we'll put in this weird symbol "%>%" called a pipe. The pipe is part of the tidyverse and connects pieces of code like a workflow. On the next line we see `filter(rating == "$10M+)`. Altogether, you could read this as:
+In the console, you can see the list of ratings there. Let's look at who our $10M+ rated folks are, using the filtering skills we learned in the previous section.
 
 1. Take the df data frame
 2. Then pipe or send it to the filter command
 3. Where we want to find ratings that equal (note: ==) $10M+
 4. Display the results in the console
 
-```{r example-filter-3, exercise = TRUE}
+```{r example-filter-4, exercise = TRUE, fig.cap="If only our own CRMs had so many prospects rated $10M+!"}
 df %>% 
   filter(rating == "$10M+")
 ```
 
-If only our real data sets could get us 24,709 prospects rated that highly!
+While that's certainly useful, it would be easier if we could enter a numerical value for rating instead of writing out the actual rating each time. In Excel, you might have used a VLOOKUP function to accomplish that task. In R, we'll use a join. 
 
-While that's certainly useful, wouldn't it be easier if we could enter a numerical value for rating instead of writing out the actual rating each time? This would be especially helpful if you want a range of ratings.
+#### VLOOKUP (Excel) vs. Join (R)
 
-### VLOOKUP (Excel) vs. Join (R)
+We start by creating a reference table and recreating the VLOOKUP functionality that you know from Excel. In R, you may see these referred to as data frames or tibbles. A tibble is simply the name for a tidyverse-styled data frame.
 
-Let's append numerical rating values by creating a reference table and recreating the VLOOKUP functionality that you know from Excel. We're going to use a tibble for this functionality. A tibble is simply the name for a tidyverse-styled data set.
+```{r img-tribble, echo=FALSE, out.width="30%", fig.align="center", fig.cap="Not a Tibble"}
+knitr::include_graphics("images/tribbles.png")
+```
 
 The structure of a tibble is:   tibble(column_1_name = c(val1, val2, etc.),
                                        column_2_name = c(val1, val2, etc.),
                                        column_3_name = c(val1, val2, etc.))
 
-We're first going to create a lookup table of values to append to `df`. This is similar to how you might use a 2nd Excel worksheet for your vlookup. Here we use the assignment operator `<-` to assign our tibble the name `rating_values`.
+Visually, it would look like this:
+                                       
+| column_1_name 	| column_2_name 	| column_3_name 	|
+|---------------	|---------------	|---------------	|
+| val1          	| val1          	| val1          	|
+| val2          	| val2          	| val2          	|
+| val3          	| val3          	| val3          	|
+
+Our tibble will be called `rating_values` and will contain two columns of data: a list of the ratings as they appear in the CRM, along with a column that contains a corresponding numerical value to that rating.
 
 ```{r rating-tibble, exercise = TRUE}
 rating_values <- tibble(rating = c("Less than $10K",
@@ -292,10 +344,10 @@ rating_values <- tibble(rating = c("Less than $10K",
 rating_values
 ```
 
-You'll notice that rating_value is in scientific notation. Here's how to turn that off.
+You may notice that rating_value is in scientific notation. If that bothers you, here's how to turn it off.
 
 ```{r rating-tibble-2, exercise = TRUE}
-options(scipen = 50)  # any significantly high number will work, I always use 50
+options(scipen = 50)  # any significantly high number will work, I tend to use 50
 
 # Print results again
 rating_values
@@ -314,9 +366,9 @@ prospecting <- left_join(df, rating_values)
 prospecting
 ```
 
-## Creating New Variables
+### Mutating Data
 
-We'll use the `mutate()` function to take our new rating values and create a new variable "rating_bucket" that groups our ratings into Leadership Gift (LG), Major Gift (MG), and Principal Gift (PG) ratings. We'll combine the `mutate` command with an `if_else` statement just like you can do in Excel.
+We'll use the `mutate()` function to take our new rating values and create a new variable `rating_bucket` that groups our ratings into Leadership Gift (LG), Major Gift (MG), and Principal Gift (PG) ratings. We'll combine the `mutate` command with an `if_else` statement just like you can do in Excel.
 
 The format of mutate is: `mutate(df, new_variable = transformation(existing_variable))`.
 
@@ -327,17 +379,35 @@ prospecting <- prospecting %>%
     "PG",
     if_else(rating_value >= 100000, "MG", "LG")
   ))
-
-# Look at our three rating columns
-prospecting %>% 
-  select.list(rating,
-              rating_value,
-              rating_bucket)
 ```
 
 What that code did was look at the rating value column that we joined in in the last command and, if it was greater than 1,000,000, make the value in the new rating_bucket column "PG" for principal gift. If the value didn't match that criteria, it moves down to the 100,000 level and assigns anything that is  greater than or equal to 100,000  to the "MG" bucket, and everything else is given the "LG" bucket.
 
-## Rearranging Columns
+### Selecting Columns of Data
+
+The `select` command allow us to choose or rearrange columns of data.
+
+```{r example-select, exercise = TRUE}
+# View only the three rating columns
+prospecting %>% 
+  select(rating,
+         rating_value,
+         rating_bucket)
+
+# Rearrange the columns so that all of the rating columns are together
+prospecting <- prospecting %>% 
+  select(lookup_id,
+         name_full,
+         city,
+         st,
+         school,
+         rating,
+         rating_value,             # New location
+         rating_bucket,            # New location
+         most_recent_gift_amount,
+         most_recent_gift_date,
+         lifetime_giving)
+```
 
 ## Prospecting with R
 
@@ -361,7 +431,8 @@ prospecting %>%
   filter(rating_value >= 100000,
          st == "TX",
          lifetime_giving >= 10000) %>% 
-  count()
+  count() %>% 
+  rename(prospects = n)  # Here's how you can rename columns (new_name = old_name)
 
 # How many prospects are rated at least at the major gift level, live in Texas,
 # have lifetime giving of at least $10,000, and are alumni?
@@ -369,24 +440,44 @@ pool <- prospecting %>%
   filter(rating_value >= 100000) %>% 
   filter(st %in% c("TX", "CA")) %>% 
   filter(!is.na(school)) %>% 
-  filter(lifetime_giving >= 10000) %>% 
-  # filter(school == "Engineering") %>% 
+  filter(lifetime_giving >= 10000) 
   {.}
 ```
 
-Did you notice those last few lines?
+### Why I Love R for Prospecting
 
-```{r code-focus, eval=FALSE}
-  filter(lifetime_giving >= 10000) %>% 
-  # filter(school == "Engineering") %>% 
+```{r example-prospecting, exercise = TRUE}
+prospecting %>% 
+  filter(st == .) %>% 
+  filter(school == .) %>% 
+  filter(rating == .) %>% 
+  filter(rating_value == .) %>% 
+  filter(rating_bucket == .) %>% 
+  filter(most_recent_gift_amount == .) %>% 
+  filter(most_recent_gift_date == .) %>% 
+  filter(lifetime_giving == .) %>% 
+  {.}
+```
+
+```{r example-prospecting-solution}
+prospecting %>% 
+  filter(st %in% c("CA", "TX", "NY")) %>% 
+  filter(school == "Engineering") %>% 
+  filter(rating == "$25K-$49K") %>% 
+  filter(rating_value >= 100000) %>% 
+  # filter(rating_bucket == "MG") %>% 
+  filter(most_recent_gift_amount > 1000) %>% 
+  filter(most_recent_gift_date >= "2019-01-01") %>% 
+  filter(lifetime_giving >= 100000) %>% 
   {.}
 ```
 
 ## Data Visualization
 
-```{r}
+```{r visualize, message=FALSE}
 library(scales)  # allows me to format numbers as currency
 
+# Lifetime Giving
 prospecting %>% 
   filter(!is.na(school)) %>% 
   ggplot(aes(school, lifetime_giving)) +
@@ -398,6 +489,7 @@ prospecting %>%
        fill = "") +
   theme_minimal()
 
+# Lifetime Giving
 prospecting %>% 
   filter(!is.na(school)) %>% 
   ggplot(aes(school, lifetime_giving)) +
@@ -408,12 +500,48 @@ prospecting %>%
        x = "School",
        y = "Lifetime Giving",
        fill = "") +
-  theme_minimal()
+  theme_gray()
+
+# Prospects by State
+prospecting %>% 
+  ggplot(aes(st, fill = rating_bucket)) +
+  geom_bar() +
+    labs(title = "How many prospects do we have in each state?",
+       fill = "Rating Bucket") +
+  coord_flip() +
+  theme_bw()
 ```
 
-## Exporting Data
+## Next Steps
 
-```{r export, eval=FALSE}
-write_csv(prospecting, "filepath.csv")
+```{r img-naming, echo=FALSE, out.width="75%", fig.align="center"}
+knitr::include_graphics("images/code_hero.jpg")
 ```
 
+One of the most surprising parts of learning R has been discovering the amazing community behind it. There are hundreds, if not thousands of resources available to you. Here some of my favorites.
+
+### Books & Websites
+
+The *R for Data Science* book is a fantastic primer to R. The whole thing is basically a series of tutorials that teach you R in an easy, self-paced way. 
+
+- [R for Data Science (R4DS)](https://r4ds.had.co.nz)
+- [ggplot2: Elegant Graphics for Data Analysis](https://ggplot2-book.org)
+- [R Graphics Cookbook](https://r-graphics.org)
+- [R for Excel Users](https://rstudio-conf-2020.github.io/r-for-excel/)
+- [The Big Book of R](https://www.bigbookofr.com)
+
+### Twitter
+
+For all of the (appropriate) flak that Twitter gets, this is the place to go for great R content and knowledge. The R community on Twitter is made up of some of the nicest, most generous people I've ever met and I learn something new from them every day. 
+
+Even if you don't use Twitter, I'd encourage you to check out the #tidytuesday hashtag and the @R4DScommunity account. The community account was originally built up around a group of people who were going through the R4DS book together and it has come to be a wonderful resource for new R users. 
+
+The #tidytuesday hashtag spun out of that group and is a very fun way to get plugged in. Each week a new, curated dataset is released and anyone who wants to can make up their own visualization and share it with the world. In addition to getting inspired by the possibilities, you have the chance to get feedback from the R community. 
+
+- #rstats
+- #tidytuesday
+- [R4DScommunity]()
+- [Tom Mock]()
+- [Hadley Wickham]()
+- [Mara Averick]()
+- [R-Ladies]
