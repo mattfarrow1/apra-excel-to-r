@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(learnr)
 library(kableExtra)
-library(janitor)
 library(here)
 
 df <- read_csv(
@@ -23,9 +22,6 @@ df <- read_csv(
     `lifetime giving` = col_number()
   )
 )
-
-df <- janitor::clean_names(df)
-
 rating_values <- tibble(rating = c("Less than $10K",
                                    "$10K-$24K",
                                    "$25K-$49K",
@@ -46,15 +42,6 @@ rating_values <- tibble(rating = c("Less than $10K",
                                          2500000,
                                          5000000,
                                          10000000))
-
-prospecting <- left_join(df, rating_values)
-
-prospecting <- prospecting %>%
-  mutate(rating_bucket = if_else(
-    rating_value >= 1000000,
-    "PG",
-    if_else(rating_value >= 100000, "MG", "LG")
-  ))
 ```
 
 ## I Can't Do This!
@@ -77,21 +64,19 @@ knitr::include_graphics("images/peter-conlan-LEgwEaBVGMo-unsplash.jpg")
 
 ### Before We Start
 
-As much as I'd like to say you'll leave here today feeling empowered to dive into R, the reality is there's only so much that I can cover in this short workshop. If you do have questions after you leave, please don't hesitate to get in touch. I've also included a number of resources at the end that can help get you started. 
+Unfortunately there's only so much that we can cover in this short workshop. If you do have questions after you leave, please don't hesitate to get in touch. I've also included a number of resources at the end that can help get you started. 
 
 Let's get started!
 
 ## Getting Started
 
-For this workshop, you won't need to install any software on your own machine; everything will be provided for you here in this document. If you are interested in using the full code from today's workshop on your own machine, a copy is available here, on GitHub.
-
-First things first, we need to download two pieces of software: R and RStudio. We discussed these during the presentation, but here are the links to download each.
-
-### Download Links
+For this workshop, you won't need to install any software on your own machine; everything will be provided for you here in this document. If you are interested in trying this out on your own, the download links for R, RStudio and the code from today's session are below.
 
 #### [R](https://cran.r-project.org)
 
 #### [RStudio](https://rstudio.com)
+
+#### [Excel to R Code]
 
 ### First Steps
 
@@ -110,13 +95,13 @@ Finally, make sure you have a new script window open in the top right. If you do
 
 ### Installing Packages
 
-Now that we have R and RStudio installed, we're going to install a set of packages that will make our work a little more straightforward. The packages are part of what is called the [tidyverse](https://www.tidyverse.org).
+At this point, we could move forward using what is referred to as "Base R" - the language that you downloaded from CRAN. The programming syntax for base R can be quite challenging, so we're going to install a set of packages that will make our work cleaner and more straightforward. The packages are part of what is called the [tidyverse](https://www.tidyverse.org) and is described on its website as:
 
 > The tidyverse is an opinionated collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures.
 
 To install packages, we use the `install.packages("package_name")` format. Don't forget the quotation marks around the name of the package!
 
-```{r install-packages, eval=FALSE, warning=FALSE}
+```{r install-packages, eval=FALSE, warning=FALSE, excercise = TRUE}
 # Install "tidyverse" packages
 install.packages("tidyverse")
 
@@ -134,7 +119,7 @@ Coming from Excel, certain conventions are fairly commonplace, things like paren
 
 | R        	| Description                              	| Shortcut         	|
 |----------	|------------------------------------------	|------------------	|
-| #        	| Comment out a line                       	|                 	|
+| #        	| Comment out a line (don't run this code)  |                 	|
 | <-       	| The assignment operator                  	| Alt + -          	|
 | %>%      	| The pipe function                        	| Ctrl + Shift + M 	|
 | $        	| Pick a specific column from a data set   	|                  	|
@@ -145,9 +130,7 @@ Coming from Excel, certain conventions are fairly commonplace, things like paren
 
 ### Read the Data
 
-In Excel, we open up a data set and then immediately start working in it. R works more like the photo editing features on your phone. We can crop, rotate, adjust contrast, and apply a filter, but at the end of that process the original photo still exists if we need to get it back.
-
-A simple view of the workflow is:
+In Excel, we open up a data set and then immediately start working. R has a level of abstraction in that we don't actually modify the original Excel file. A simple view of the workflow is:
 
 - Point R at the location of a file
 - R loads the data of the file into memory
@@ -155,7 +138,7 @@ A simple view of the workflow is:
 - If you make a change, a mistake, or want to start over, the original data is ready
 - Finally, you can save your work back into an Excel-readable file
 
-We're going to start at the beginning and read in our data set. This can be done in code, but there's a more user-friendly way to it. We're going to use the `read_csv` function that comes as part of the `readr` package in the `tidyverse`. There are packages (`readxl` for example) that will let you read .xlsx files, but today we're just going to work with a simple .csv file. 
+We're going to start at the beginning and read in our data set. This can be done in code, but there's a more user-friendly way to it. We're going to use the `read_csv` function that comes as part of the `readr` package in the `tidyverse`. There are packages, `readxl` for example, that will let you read .xlsx files, but today we're just going to work with a simple .csv file. 
 
 ```{r}
 # ADD READR IMPORTING DATA SCREENSHOTS
@@ -176,22 +159,36 @@ One of the things you're probably starting to realize is that `R` requires you t
 
 ### Cleaning up Column Names
 
-We're going to use a function from the `janitor` package to reformat out column names with underscores instead of spaces. The reason we're doing that is it makes it much easier for R to know that "most recent gift amount" is not four separate things, but a single variable: most_recent_gift_amount. I could have done this ahead of time, but most of you will probably be working with Excel files that have column names like "Research Rating" or "Lookup ID".
+Here's something that you don't need to do, but will make your life much easier. Let's look at our current column names:
+
+```{r column-names}
+colnames(df)
+```
+
+You'll notice that a couple of the column names have words separated by an underscore, while others have spaces. We're going to make all of the variable names have underscores instead of spaces. The reason we're doing that is it makes it much easier for R to know that "most recent gift amount" is not four separate things, but a single variable: most_recent_gift_amount. I could have done this ahead of time, but most of you will probably be working with Excel files that have column names like "Research Rating" or "Lookup ID" and may find this helpful.
+
+We're going to use a function from the `janitor` package to reformat out column names with underscores instead of spaces.
 
 ```{r img-janitor, echo=FALSE, out.width="75%", fig.align="center"}
 knitr::include_graphics("images/janitor_clean_names.png")
 ```
 
-```{r df-janitor, eval=FALSE}
+```{r clean-df}
 df <- janitor::clean_names(df)
 ```
 
-You may have noticed there that I used a slightly different format, `janitor::clean_names(df)`, calling the library name, followed by two colons, followed by the function name. Since that's the only time in this workshop that I'm using the `janitor` package, this was a way to call the one function without loading the whole library like this:
 
-```{r df-janitor-demo, eval=FALSE}
-library(janitor)
-df <- clean_names(df)
+```{r df-janitor, exercise = TRUE, exercise.setup = "clean-df"}
+# install.packages("janitor")
+
+# Clean my column names
+df <- janitor::clean_names(df)
+
+# Look at the cleaned up column names
+colnames(df)
 ```
+
+You may have noticed there that I used a slightly different format, `janitor::clean_names(df)`, calling the library name, followed by two colons, followed by the function name. Since that's the only time in this workshop that I'm using the `janitor` package, this was a way, assuming the package is already installed, to call the one function without loading the whole library.
 
 You may have also noticed that the function defaults to camel_case, which is my preferred style, but there are many others!
 
@@ -203,13 +200,15 @@ knitr::include_graphics("images/coding_cases.png")
 
 There are a number of ways to take a look at your data at this point. The first is to click on the name of the data set in the Environment tab. Here are two other ways from within the code.
 
-```{r examine-data, exercise = TRUE}
+```{r examine-data, exercise = TRUE, exercise.setup = "clean-df"}
 # Structure: this is a built-in function of R
 str(df)
 
 # Glimpse: a more compact version of str that comes with the tidyverse
 glimpse(df)
 ```
+
+Now that we've seen how to load and look at our data, let's look at manipulating it and getting it ready for analysis. 
 
 ## Data Manipulation
 
@@ -247,7 +246,8 @@ However, one of the challenges in using Excel for this work is that it isn't rep
 
 In R, We're going to start by chaining some pieces together using the `%>%` command. In tidyverse parlance, this is referred to as a "pipe," and it is used to pipe or chain actions together.
 
-```{r example-filter-1, exercise = TRUE}
+```{r example-filter-1, exercise = TRUE, exercise.setup = "clean-df"}
+# Find prospects whose most recent gift was on or after 6/1/2019
 df %>%
   filter(most_recent_gift_date >= "2019-06-01")
 ```
@@ -256,7 +256,8 @@ Here we took our data **(df)** and piped it **(%>%)** to our filter where we ask
 
 We can also filter more than one thing at a time:
 
-```{r example-filter-2, exercise = TRUE}
+```{r example-filter-2, exercise = TRUE, exercise.setup = "clean-df"}
+# Find prospects whose most recent gift was on or after 6/1/2019 and who live in Texas
 df %>%
   filter(most_recent_gift_date >= "2019-06-01",
          st == "TX")
@@ -264,7 +265,8 @@ df %>%
 
 In this example, we've added a comma after 6/1/2019 along with a 2nd filter - **state equals Texas** - to our last example. If, for some reason, we wanted to see recent givers *or* prospects who lived in Texas, we could do that too:
 
-```{r example-filter-3, exercise = TRUE}
+```{r example-filter-3, exercise = TRUE, exercise.setup = "clean-df"}
+# Find prospects whose most recent gift was on or after 6/1/2019 OR who live in Texas
 df %>%
   filter(most_recent_gift_date >= "2019-06-01" |
            st == "TX")
@@ -278,7 +280,7 @@ Now that we've seen the basics of filtering, let's look at our ratings. What val
 
 The `unique` function returns all of the different values within the specific field(s). In this case, we've put `df$rating` inside the parentheses. That tells R that we want the unique values of the rating column inside the `df` data set.
 
-```{r example-unique, exercise = TRUE}
+```{r example-unique, exercise = TRUE, exercise.setup = "clean-df"}
 unique(df$rating)
 ```
 
@@ -366,19 +368,39 @@ prospecting <- left_join(df, rating_values)
 prospecting
 ```
 
+```{r clean-prospecting}
+df <- janitor::clean_names(df)
+prospecting <- left_join(df, rating_values)
+options(scipen = 50)
+```
+
 ### Mutating Data
 
 We'll use the `mutate()` function to take our new rating values and create a new variable `rating_bucket` that groups our ratings into Leadership Gift (LG), Major Gift (MG), and Principal Gift (PG) ratings. We'll combine the `mutate` command with an `if_else` statement just like you can do in Excel.
 
 The format of mutate is: `mutate(df, new_variable = transformation(existing_variable))`.
 
-```{r example-mutate, exercise = TRUE}
+```{r example-mutate, exercise = TRUE, exercise.setup = "clean-prospecting"}
 prospecting <- prospecting %>%
   mutate(rating_bucket = if_else(
     rating_value >= 1000000,
     "PG",
     if_else(rating_value >= 100000, "MG", "LG")
   ))
+
+prospecting
+```
+
+```{r clean-prospecting-2}
+df <- janitor::clean_names(df)
+prospecting <- left_join(df, rating_values)
+prospecting <- prospecting %>%
+  mutate(rating_bucket = if_else(
+    rating_value >= 1000000,
+    "PG",
+    if_else(rating_value >= 100000, "MG", "LG")
+  ))
+options(scipen = 50)
 ```
 
 What that code did was look at the rating value column that we joined in in the last command and, if it was greater than 1,000,000, make the value in the new rating_bucket column "PG" for principal gift. If the value didn't match that criteria, it moves down to the 100,000 level and assigns anything that is  greater than or equal to 100,000  to the "MG" bucket, and everything else is given the "LG" bucket.
@@ -387,15 +409,17 @@ What that code did was look at the rating value column that we joined in in the 
 
 The `select` command allow us to choose or rearrange columns of data.
 
-```{r example-select, exercise = TRUE}
+```{r example-select-1, exercise = TRUE, exercise.setup = "clean-prospecting-2"}
 # View only the three rating columns
 prospecting %>% 
   select(rating,
          rating_value,
          rating_bucket)
+```
 
+```{r example-select-2, exercise = TRUE, exercise.setup = "clean-prospecting-2"}
 # Rearrange the columns so that all of the rating columns are together
-prospecting <- prospecting %>% 
+prospecting %>% 
   select(lookup_id,
          name_full,
          city,
@@ -415,16 +439,20 @@ Now that we have our data set up, let's start doing some prospecting. We'll star
 
 ### Combining `count()` and `filter` to count numbers of prospects
 
-```{r prospecting-1, exercise = TRUE}
+```{r prospecting-1, exercise = TRUE, exercise.setup = "clean-prospecting-2"}
 # How many prospects do we have by rating?
 prospecting %>% 
   count(rating_bucket)
+```
 
+```{r prospecting-2, exercise = TRUE, exercise.setup = "clean-prospecting-2"}
 # How many prospects are there in Texas?
 prospecting %>% 
   filter(st == "TX") %>% 
   count(rating_bucket)
+```
 
+```{r prospecting-3, exercise = TRUE, exercise.setup = "clean-prospecting-2"}
 # How many prospects are rated at least at the major gift level, live in Texas,
 # and have lifetime giving of at least $10,000?
 prospecting %>% 
@@ -433,48 +461,62 @@ prospecting %>%
          lifetime_giving >= 10000) %>% 
   count() %>% 
   rename(prospects = n)  # Here's how you can rename columns (new_name = old_name)
+```
 
+```{r prospecting-4, exercise = TRUE, exercise.setup = "clean-prospecting-2"}
 # How many prospects are rated at least at the major gift level, live in Texas,
 # have lifetime giving of at least $10,000, and are alumni?
 pool <- prospecting %>% 
   filter(rating_value >= 100000) %>% 
   filter(st %in% c("TX", "CA")) %>% 
   filter(!is.na(school)) %>% 
-  filter(lifetime_giving >= 10000) 
-  {.}
+  filter(lifetime_giving >= 10000)
 ```
 
 ### Why I Love R for Prospecting
 
-```{r example-prospecting, exercise = TRUE}
+```{r prospecting-5, exercise = TRUE, exercise.setup = "clean-prospecting-2"}
 prospecting %>% 
-  filter(st == .) %>% 
-  filter(school == .) %>% 
-  filter(rating == .) %>% 
-  filter(rating_value == .) %>% 
-  filter(rating_bucket == .) %>% 
-  filter(most_recent_gift_amount == .) %>% 
-  filter(most_recent_gift_date == .) %>% 
-  filter(lifetime_giving == .) %>% 
-  {.}
-```
-
-```{r example-prospecting-solution}
-prospecting %>% 
-  filter(st %in% c("CA", "TX", "NY")) %>% 
-  filter(school == "Engineering") %>% 
-  filter(rating == "$25K-$49K") %>% 
-  filter(rating_value >= 100000) %>% 
+  # filter(st %in% c("CA", "TX", "NY")) %>% 
+  # filter(school == "Engineering") %>% 
+  # filter(rating == "$25K-$49K") %>% 
+  # filter(rating_value >= 100000) %>% 
   # filter(rating_bucket == "MG") %>% 
-  filter(most_recent_gift_amount > 1000) %>% 
-  filter(most_recent_gift_date >= "2019-01-01") %>% 
-  filter(lifetime_giving >= 100000) %>% 
+  # filter(most_recent_gift_amount > 1000) %>% 
+  # filter(most_recent_gift_date >= "2019-01-01") %>% 
+  # filter(lifetime_giving >= 100000) %>% 
   {.}
 ```
 
 ## Data Visualization
 
-```{r visualize, message=FALSE}
+In addition to doing basic data manipulation, we can also do visualization in R using the `ggplot2` package. I'm going to demonstrate some basics here, but I'd encourage you to look through the resources at the end or simply search "How to make a 'X' plot in R?" and I can guarantee you'll find an answer.
+
+Here is the basic structure of a simple scatter plot.
+
+```{r visualize-structure, eval=FALSE}
+# Method 1 to start plotting
+prospecting %>% 
+  ggplot()...
+
+# Method 2 to start plotting
+ggplot(prospecting, ...)
+
+# ggplot structure
+prospecting %>% 
+  ggplot(aes(x, y, color, fill, etc.)) +          # Specify the aesthetics (aes)
+  geom point() +                                  # define the type of plot
+  labs(title = "My Amazing Plot",                 # set your labels
+       subtitle = "I rock!"
+       x = "x variable",
+       y = "y variable",
+       caption = "Apra Data Science Now 2020") +
+  theme_minimal()                                 # pick a theme
+```
+
+
+```{r visualize-1, message=FALSE, exercise = TRUE, exercise.setup = "clean-prospecting-2"}
+library(ggplot2) # for plotting
 library(scales)  # allows me to format numbers as currency
 
 # Lifetime Giving
@@ -488,7 +530,9 @@ prospecting %>%
        y = "Lifetime Giving",
        fill = "") +
   theme_minimal()
+```
 
+```{r visualize-2, message=FALSE, exercise = TRUE, exercise.setup = "clean-prospecting-2"}
 # Lifetime Giving
 prospecting %>% 
   filter(!is.na(school)) %>% 
@@ -501,7 +545,9 @@ prospecting %>%
        y = "Lifetime Giving",
        fill = "") +
   theme_gray()
+```
 
+```{r visualize-3, message=FALSE, exercise = TRUE, exercise.setup = "clean-prospecting-2"}
 # Prospects by State
 prospecting %>% 
   ggplot(aes(st, fill = rating_bucket)) +
@@ -511,10 +557,38 @@ prospecting %>%
   coord_flip() +
   theme_bw()
 ```
+One of the reasons I like piping my data set into ggplot is it offers me a chance to change up my data as I'm plotting. For example:
+
+```{r visualize-4, message=FALSE, exercise = TRUE, exercise.setup = "clean-prospecting-2"}
+# Most recent gift
+prospecting %>% 
+  mutate(last_gift = if_else(most_recent_gift_date >= "2019-06-01", "This Year",
+                             if_else(most_recent_gift_date >= "2018-06-01", "LYBUNT",
+                                     if_else(most_recent_gift_date < "2018-06-01", "SYBUNT", "Non-Donor"))),
+         last_gift = replace_na(last_gift, "Non-Donor")) %>% 
+  ggplot(aes(last_gift)) +
+  geom_bar()
+```
+
+```{r visualize-5, message=FALSE, exercise = TRUE, exercise.setup = "clean-prospecting-2"}
+# Giving by school
+prospecting %>% 
+  filter(!is.na(school)) %>% 
+  group_by(school) %>% 
+  summarise(mean_gift = mean(most_recent_gift_amount, na.rm = TRUE)) %>% 
+  ggplot(aes(school, mean_gift, label = dollar(mean_gift))) +
+  geom_point(color = "red") +
+  geom_text(hjust = 1.15) +
+  scale_y_continuous(labels = dollar) +
+  labs(title = "Average Size of Most Recent Gift by School",
+       x = "",
+       y = "Average of Most Recent Gift") +
+  theme_classic()
+```
 
 ## Next Steps
 
-```{r img-naming, echo=FALSE, out.width="75%", fig.align="center"}
+```{r img-code-hero, echo=FALSE, out.width="75%", fig.align="center"}
 knitr::include_graphics("images/code_hero.jpg")
 ```
 
@@ -538,10 +612,16 @@ Even if you don't use Twitter, I'd encourage you to check out the #tidytuesday h
 
 The #tidytuesday hashtag spun out of that group and is a very fun way to get plugged in. Each week a new, curated dataset is released and anyone who wants to can make up their own visualization and share it with the world. In addition to getting inspired by the possibilities, you have the chance to get feedback from the R community. 
 
-- #rstats
-- #tidytuesday
-- [R4DScommunity]()
-- [Tom Mock]()
-- [Hadley Wickham]()
-- [Mara Averick]()
-- [R-Ladies]
+- [#rstats](https://twitter.com/hashtag/RStats?src=hashtag_click)
+- [#tidytuesday](https://twitter.com/search?q=%23TidyTuesday&src=hashtag_click)  
+
+- [R4DScommunity](https://twitter.com/R4DScommunity)
+- [Tom Mock](https://twitter.com/thomas_mock)
+- [Hadley Wickham](https://twitter.com/hadleywickham)
+- [Mara Averick](https://twitter.com/dataandme)
+- [Allison Horst](https://twitter.com/allison_horst)
+- [Alison Hill](https://twitter.com/apreshill)
+- [We are R-Ladies](https://twitter.com/WeAreRLadies)
+- [RStudio Tips](https://twitter.com/rstudiotips)
+
+Special thanks to [Allison Horst](https://www.allisonhorst.com) for her amazing artwork! 

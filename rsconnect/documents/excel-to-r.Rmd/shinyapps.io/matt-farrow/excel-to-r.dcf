@@ -1,0 +1,12 @@
+name: excel-to-r
+title: excel-to-r
+username:
+account: matt-farrow
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2793206
+bundleId: 3644846
+url: https://matt-farrow.shinyapps.io/excel-to-r/
+when: 1600457515.59416
+asMultiple: FALSE
+asStatic: FALSE
