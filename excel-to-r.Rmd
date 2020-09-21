@@ -76,7 +76,7 @@ For this workshop, you won't need to install any software on your own machine; e
 
 #### [RStudio](https://rstudio.com)
 
-#### [Excel to R Code]
+#### [Excel to R Code](https://github.com/mattfarrow1/apra-excel-to-r/blob/master/workshop-code.R)
 
 ### First Steps
 
@@ -140,8 +140,8 @@ In Excel, we open up a data set and then immediately start working. R has a leve
 
 We're going to start at the beginning and read in our data set. This can be done in code, but there's a more user-friendly way to it. We're going to use the `read_csv` function that comes as part of the `readr` package in the `tidyverse`. There are packages, `readxl` for example, that will let you read .xlsx files, but today we're just going to work with a simple .csv file. 
 
-```{r}
-# ADD READR IMPORTING DATA SCREENSHOTS
+```{r readr-import, echo=FALSE, out.width="100%", fig.align="center", fig.cap="Import Data Set with readr"}
+knitr::include_graphics("images/readr_import.gif")
 ```
 
 ```{r load-data, eval=FALSE}

@@ -154,7 +154,7 @@ photo by <a href="https://unsplash.com/@peterconlan">Peter Conlan</a> on <a href
 <h4><a href="https://rstudio.com">RStudio</a></h4>
 </div>
 <div id="section-excel-to-r-code" class="section level4">
-<h4>[Excel to R Code]</h4>
+<h4><a href="https://github.com/mattfarrow1/apra-excel-to-r/blob/master/workshop-code.R">Excel to R Code</a></h4>
 </div>
 <div id="section-first-steps" class="section level3">
 <h3>First Steps</h3>
@@ -256,7 +256,12 @@ library(tidyverse)</code></pre>
 <li>Finally, you can save your work back into an Excel-readable file</li>
 </ul>
 <p>We’re going to start at the beginning and read in our data set. This can be done in code, but there’s a more user-friendly way to it. We’re going to use the <code>read_csv</code> function that comes as part of the <code>readr</code> package in the <code>tidyverse</code>. There are packages, <code>readxl</code> for example, that will let you read .xlsx files, but today we’re just going to work with a simple .csv file.</p>
-<pre class="r"><code># ADD READR IMPORTING DATA SCREENSHOTS</code></pre>
+<div class="figure" style="text-align: center">
+<img src="images/readr_import.gif" alt="Import Data Set with readr" width="100%" />
+<p class="caption">
+Import Data Set with readr
+</p>
+</div>
 <pre class="r"><code>df &lt;- read_csv(
   &quot;excel-to-r.csv&quot;,
   col_types = cols(
