@@ -630,6 +630,7 @@ One of the most surprising parts of learning R has been discovering the amazing 
 The *R for Data Science* book is a fantastic primer to R. The whole thing is basically a series of tutorials that teach you R in an easy, self-paced way.
 
 -   [R for Data Science (R4DS)](https://r4ds.had.co.nz)
+-   [Dive into dplyr (tutorial)](https://www.kaggle.com/jessemostipak/dive-into-dplyr-tutorial)
 -   [ggplot2: Elegant Graphics for Data Analysis](https://ggplot2-book.org)
 -   [R Graphics Cookbook](https://r-graphics.org)
 -   [R for Excel Users](https://rstudio-conf-2020.github.io/r-for-excel/)
@@ -659,6 +660,8 @@ The \#tidytuesday hashtag spun out of that group and is a very fun way to get pl
 -   [Allison Horst](https://twitter.com/allison_horst)
 
 -   [Alison Hill](https://twitter.com/apreshill)
+
+-   [Jesse Mostipak](https://twitter.com/kierisi)
 
 -   [We are R-Ladies](https://twitter.com/WeAreRLadies)
 
